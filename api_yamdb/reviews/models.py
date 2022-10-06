@@ -32,7 +32,7 @@ class User(AbstractUser):
 
 
 class Review(models.Model):
-    title = models.models.ForeignKey(
+    title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
         related_name='reviews',
@@ -66,7 +66,7 @@ class Review(models.Model):
                 fields=('title', 'author'),
                 name='unique review')]
         ordering = ('pub_date',)
-    
+
     def __str__(self):
         return self.text
 

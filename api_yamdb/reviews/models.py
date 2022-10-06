@@ -29,6 +29,7 @@ class User(AbstractUser):
     email = models.EmailField(
         blank=False,
     )
+    bio = models.TextField()
 
 
 class Review(models.Model):
@@ -100,3 +101,4 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text
+

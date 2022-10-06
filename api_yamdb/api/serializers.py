@@ -23,6 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
             'confirmation_code',
             'role',
             'email',
+            'bio',
         )
 
 

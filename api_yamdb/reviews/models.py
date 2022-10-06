@@ -28,3 +28,4 @@ class User(AbstractUser):
     email = models.EmailField(
         blank=False,
     )
+    bio = models.TextField()

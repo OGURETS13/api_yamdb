@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -27,8 +28,20 @@ class User(AbstractUser):
     )
     email = models.EmailField(
         blank=False,
+        unique=True,
     )
-    bio = models.TextField()
+    bio = models.TextField(
+        blank=True,
+        null=True,
+    )
+    first_name = models.CharField(
+        max_length=150,
+        blank=True
+    )
+    last_name = models.CharField(
+        max_length=150,
+        blank=True
+    )
 
 
 class Category(models.Model):

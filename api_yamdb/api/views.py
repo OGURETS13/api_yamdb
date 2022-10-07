@@ -2,24 +2,31 @@ from random import randint
 
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .permissions import AdminModeratorAuthorPermission
-from reviews.models import Review, User
-from .serializers import CommentSerializer, ReviewSerializer, UserSerializer
+from reviews.models import User
+from .permissions import IsAdminOrReadOnly
+from .serializers import UserSerializer
 
 
 class SendConfirmationCodeView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
+        username = request.data['username']
+
+        if User.objects.filter(username=username).exists():
+            instance = User.objects.get(username=username)
+            serializer = UserSerializer(
+                instance=instance,
+                data=request.data
+            )
 
         if serializer.is_valid():
             confirmation_code = str(randint(100000, 999999))
             email = request.data['email']
-
             send_mail(
                 'YAMDB Confirmation code',
                 str(request.data['username'] + '\n' + str(confirmation_code)),
@@ -46,35 +53,32 @@ class GetTokenView(APIView):
             })
 
 
-class CommentViewSet(viewsets.ModelViewSet):
-    serializer_class = CommentSerializer
-    permission_classes = (AdminModeratorAuthorPermission,)
+class MeViewSet(viewsets.ViewSet):
+    def retrieve(self, request, pk=None):
+        queryset = User.objects.all()
+        me = get_object_or_404(queryset, pk=request.user.pk)
+        serializer = UserSerializer(me)
+        return Response(serializer.data)
 
-    def get_queryset(self):
-        review = get_object_or_404(
-            Review,
-            id=self.kwargs.get('review_id'))
-        return review.comments.all()
-
-    def perform_create(self, serializer):
-        review = get_object_or_404(
-            Review,
-            id=self.kwargs.get('review_id'))
-        serializer.save(author=self.request.user, review=review)
+    def partial_update(self, request, pk=None):
+        queryset = User.objects.all()
+        me = get_object_or_404(queryset, pk=request.user.pk)
+        serializer = UserSerializer(me, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
-    serializer_class = ReviewSerializer
-    permission_classes = (AdminModeratorAuthorPermission,)
-
-    def get_queryset(self):
-        title = get_object_or_404(
-            Title,
-            id=self.kwargs.get('title_id'))
-        return title.reviews.all()
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsAdminOrReadOnly,)
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
 
     def perform_create(self, serializer):
-        title = get_object_or_404(
-            Title,
-            id=self.kwargs.get('title_id'))
-        serializer.save(author=self.request.user, title=title)
+        if 'role' in self.request.data:
+            serializer.save(role=self.request.data['role'])
+        serializer.save()

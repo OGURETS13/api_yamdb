@@ -29,3 +29,21 @@ class User(AbstractUser):
         blank=False,
     )
     bio = models.TextField()
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=200, null=False, blank=False)
+    slug = models.SlugField(unique=True, null=False, blank=False)
+
+
+class Genre(models.Model):
+    name = models.CharField(max_length=200, null=False, blank=False)
+    slug = models.SlugField(unique=True, null=False, blank=False)
+
+
+class Title(models.Model):
+    name = models.CharField(max_length=200, null=False, blank=False)
+    year = models.IntegerField()
+    description = models.TextField(null=False, blank=True)
+    genre = models.ManyToManyField(Genre, related_name='titles')
+    category = models.ForeignKey(Category, related_name='titles', on_delete=models.DO_NOTHING)

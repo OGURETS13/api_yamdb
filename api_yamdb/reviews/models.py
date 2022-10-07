@@ -32,13 +32,13 @@ class User(AbstractUser):
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=200, null=False, blank=False)
-    slug = models.SlugField(unique=True, null=False, blank=False)
+    name = models.CharField(max_length=256, null=False, blank=False)
+    slug = models.SlugField(max_length=50, unique=True, null=False, blank=False)
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=200, null=False, blank=False)
-    slug = models.SlugField(unique=True, null=False, blank=False)
+    name = models.CharField(max_length=256, null=False, blank=False)
+    slug = models.SlugField(max_length=50, unique=True, null=False, blank=False)
 
 
 class Title(models.Model):

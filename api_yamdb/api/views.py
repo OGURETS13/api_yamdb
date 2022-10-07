@@ -2,13 +2,14 @@ from random import randint
 
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import status
+from rest_framework import status, mixins, viewsets, permissions, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import User
-from .serializers import UserSerializer
+from reviews.models import User, Category, Genre, Title
+from .serializers import UserSerializer, CategorySerializer, GenreSerializer
+from .permissions import IsAdminOrReadOnly
 
 
 class SendConfirmationCodeView(APIView):
@@ -43,3 +44,36 @@ class GetTokenView(APIView):
             return Response({
                 'access': str(refresh.access_token),
             })
+
+
+class CreateListDestroyViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    pass
+
+
+class CategoryViewSet(CreateListDestroyViewSet):
+    #TODO: пагинация
+    # TODO: права доступа
+    # permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (permissions.AllowAny,)
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class GenreViewSet(CreateListDestroyViewSet):
+    #TODO: пагинация
+    # TODO: права доступа
+    # permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (permissions.AllowAny,)
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)

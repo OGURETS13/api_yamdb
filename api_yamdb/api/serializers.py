@@ -4,13 +4,18 @@ from reviews.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    confirmation_code = serializers.HiddenField(
+    confirmation_code = serializers.CharField(
         default=''
     )
-    role = serializers.CharField(
-        read_only=True, default='user'
+    serializers.ChoiceField(
+        read_only=True,
+        choices=['user', 'moderator', 'admin'],
     )
-    password = serializers.CharField(required=False, allow_null=True)
+    password = serializers.HiddenField(
+        default='',
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = User
@@ -23,3 +28,4 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
             'bio',
         )
+        lookup_field = 'username'

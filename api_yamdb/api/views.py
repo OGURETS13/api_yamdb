@@ -85,9 +85,9 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     #TODO: пагинация
-    # permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    permission_classes = (permissions.AllowAny,)
+    # permission_classes = (permissions.AllowAny,)
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')

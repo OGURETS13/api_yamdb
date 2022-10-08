@@ -107,7 +107,6 @@ class TitleViewSet(viewsets.ModelViewSet):
             return TitleCreateUpdateSerializer
 
 
-
 class MeViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         queryset = User.objects.all()

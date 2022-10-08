@@ -39,5 +39,4 @@ urlpatterns = [
         GetTokenView.as_view(),
         name='token_obtain'
     ),
-    path('', include(router.urls))
 ]

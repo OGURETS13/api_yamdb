@@ -13,7 +13,7 @@ from reviews.models import (
 
 
 class UserSerializer(serializers.ModelSerializer):
-    confirmation_code = serializers.CharField(
+    confirmation_code = serializers.HiddenField(
         default=''
     )
     serializers.ChoiceField(
@@ -25,19 +25,25 @@ class UserSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    role = serializers.HiddenField(
+        default='user'
+    )
 
     class Meta:
         model = User
         fields = (
-            'id',
             'username',
             'password',
             'confirmation_code',
             'role',
             'email',
-            'bio',
         )
         lookup_field = 'username'
+
+    def validate_username(self, value):
+        if value == 'me':
+            raise serializers.ValidationError("Username 'me' - под запретом!")
+        return value
 
 
 class CategorySerializer(serializers.ModelSerializer):

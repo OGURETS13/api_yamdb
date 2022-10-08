@@ -71,7 +71,6 @@ class CreateListDestroyViewSet(
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
-    # TODO: пагинация
     permission_classes = (IsAdminOrReadOnly,)
     # permission_classes = (permissions.AllowAny,)
     queryset = Category.objects.all()
@@ -82,7 +81,6 @@ class CategoryViewSet(CreateListDestroyViewSet):
 
 
 class GenreViewSet(CreateListDestroyViewSet):
-    # TODO: пагинация
     permission_classes = (IsAdminOrReadOnly,)
     # permission_classes = (permissions.AllowAny,)
     queryset = Genre.objects.all()
@@ -93,18 +91,33 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    # TODO: пагинация
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
+    # TODO: почему не работает DjangoFilterBackend?
+    # filter_backends = (DjangoFilterBackend,)
     # permission_classes = (permissions.AllowAny,)
     queryset = Title.objects.all()
-    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
+    # filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve', 'destroy'):
             return TitleReadDelSerializer
-        if self.action in ('create', 'update'):
-            return TitleCreateUpdateSerializer
+        return TitleCreateUpdateSerializer
+
+    def get_queryset(self):
+        queryset = super(TitleViewSet, self).get_queryset()
+        genre_slug = self.request.query_params.get('genre', None)
+        category_slug = self.request.query_params.get('category', None)
+        year = self.request.query_params.get('year', None)
+        name = self.request.query_params.get('name', None)
+        if genre_slug:
+            queryset = queryset.filter(genre__slug=genre_slug)
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+        if year:
+            queryset = queryset.filter(year=year)
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
 
 
 class MeViewSet(viewsets.ViewSet):

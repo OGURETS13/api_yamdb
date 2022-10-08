@@ -89,17 +89,18 @@ class GenreTitle(models.Model):
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
-    class Meta:
-        verbose_name = 'Отзыв',
-        constraints = [
-            models.UniqueConstraint(
-                fields=('title', 'author'),
-                name='unique review')]
-        ordering = ('pub_date',)
-        unique_together = ('genre', 'title', )
-
-    def __str__(self):
-        return self.text
+    # !!!Этот код все ломает, зачем он тут?
+    # class Meta:
+    #     verbose_name = 'Отзыв',
+    #     constraints = [
+    #         models.UniqueConstraint(
+    #             fields=('title', 'author'),
+    #             name='unique review')]
+    #     ordering = ('pub_date',)
+    #     unique_together = ('genre', 'title', )
+    #
+    # def __str__(self):
+    #     return self.text
 
 
 class Comment(models.Model):

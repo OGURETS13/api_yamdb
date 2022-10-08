@@ -2,7 +2,7 @@ from random import randint
 
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import status, mixins, viewsets, permissions, filters
+from rest_framework import status, mixins, viewsets, filters, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -13,7 +13,8 @@ from .serializers import (
     UserSerializer,
     CategorySerializer,
     GenreSerializer,
-    TitleSerializer
+    TitleReadDelSerializer,
+    TitleCreateUpdateSerializer
 )
 from .permissions import IsAdminOrReadOnly
 
@@ -62,7 +63,7 @@ class CreateListDestroyViewSet(
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
-    #TODO: пагинация
+    # TODO: пагинация
     permission_classes = (IsAdminOrReadOnly,)
     # permission_classes = (permissions.AllowAny,)
     queryset = Category.objects.all()
@@ -73,7 +74,7 @@ class CategoryViewSet(CreateListDestroyViewSet):
 
 
 class GenreViewSet(CreateListDestroyViewSet):
-    #TODO: пагинация
+    # TODO: пагинация
     permission_classes = (IsAdminOrReadOnly,)
     # permission_classes = (permissions.AllowAny,)
     queryset = Genre.objects.all()
@@ -84,10 +85,15 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    #TODO: пагинация
+    # TODO: пагинация
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     # permission_classes = (permissions.AllowAny,)
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve', 'destroy'):
+            return TitleReadDelSerializer
+        if self.action in ('create', 'update'):
+            return TitleCreateUpdateSerializer

@@ -45,10 +45,10 @@ class GenreSerializer(serializers.ModelSerializer):
         )
 
 
-class TitleSerializer(serializers.ModelSerializer):
+class TitleReadDelSerializer(serializers.ModelSerializer):
 
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer(many=False)
+    genre = GenreSerializer(many=True, read_only=True)
+    category = CategorySerializer(many=False, read_only=True)
 
     class Meta:
         model = Title
@@ -56,7 +56,32 @@ class TitleSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'year',
-            # 'rating', #TODO: сделать вычисляемое поле rating когда появится модель с оценками
+            # 'rating',
+            # TODO: сделать вычисляемое поле когда появится модель с оценками
+            'description',
+            'genre',
+            'category'
+        )
+
+
+class TitleCreateUpdateSerializer(serializers.ModelSerializer):
+
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all()
+    )
+
+    class Meta:
+        model = Title
+        fields = (
+            'id',
+            'name',
+            'year',
             'description',
             'genre',
             'category'
@@ -65,35 +90,36 @@ class TitleSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         genres = validated_data.pop('genre')
         category = validated_data.pop('category')
-        current_category, status = Category.objects.get_or_create(**category)
         title = Title.objects.create(
             **validated_data,
-            category=current_category
+            category=category
         )
-        print(f'title: {title}')
         for genre in genres:
-            current_genre, status = Genre.objects.get_or_create(**genre)
             GenreTitle.objects.create(
-                genre=current_genre,
+                genre=genre,
                 title=title
             )
         return title
 
     def update(self, instance, validated_data):
-        genres = validated_data.pop('genre')
-        category = validated_data.pop('category')
-        current_category, status = Category.objects.get_or_create(**category)
-
         instance.name = validated_data.get('name', instance.name)
         instance.year = validated_data.get('year', instance.year)
-        instance.description = validated_data.get('description', instance.description)
-        instance.category = current_category
-
+        instance.description = validated_data.get(
+            'description',
+            instance.description
+        )
+        instance.category = validated_data.get(
+            'category',
+            instance.category
+        )
+        genres = validated_data.pop('genre')
         for genre in genres:
-            current_genre, status = Genre.objects.get_or_create(**genre)
             GenreTitle.objects.get_or_create(
-                genre=current_genre,
+                genre=genre,
                 title=instance
             )
         instance.save()
         return instance
+
+    def to_representation(self, instance):
+        return TitleReadDelSerializer().to_representation(instance)

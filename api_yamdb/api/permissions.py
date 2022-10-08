@@ -23,9 +23,8 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-
-        role = request.user.role
-        return role == 'admin'
+        return (request.user.is_anonymous is False
+                and request.user.role == 'admin')
 
 
 class AdminModeratorAuthorPermission(permissions.BasePermission):

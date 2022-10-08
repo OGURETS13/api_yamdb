@@ -127,7 +127,7 @@ class TitleCreateUpdateSerializer(serializers.ModelSerializer):
             'category',
             instance.category
         )
-        genres = validated_data.pop('genre')
+        genres = validated_data.get('genre', [])
         for genre in genres:
             GenreTitle.objects.get_or_create(
                 genre=genre,

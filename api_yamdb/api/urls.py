@@ -5,12 +5,14 @@ from .views import (
     GetTokenView,
     SendConfirmationCodeView,
     CategoryViewSet,
-    GenreViewSet
+    GenreViewSet,
+    TitleViewSet
 )
 
 router = SimpleRouter()
 router.register('categories', CategoryViewSet)
 router.register('genres', GenreViewSet)
+router.register('titles', TitleViewSet)
 
 urlpatterns = [
     path('auth/signup/', SendConfirmationCodeView.as_view()),

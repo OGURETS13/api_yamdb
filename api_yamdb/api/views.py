@@ -6,9 +6,15 @@ from rest_framework import status, mixins, viewsets, permissions, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django_filters.rest_framework import DjangoFilterBackend
 
 from reviews.models import User, Category, Genre, Title
-from .serializers import UserSerializer, CategorySerializer, GenreSerializer
+from .serializers import (
+    UserSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer
+)
 from .permissions import IsAdminOrReadOnly
 
 
@@ -57,9 +63,8 @@ class CreateListDestroyViewSet(
 
 class CategoryViewSet(CreateListDestroyViewSet):
     #TODO: пагинация
-    # TODO: права доступа
-    # permission_classes = (IsAdminOrReadOnly,)
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (IsAdminOrReadOnly,)
+    # permission_classes = (permissions.AllowAny,)
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     lookup_field = 'slug'
@@ -69,11 +74,20 @@ class CategoryViewSet(CreateListDestroyViewSet):
 
 class GenreViewSet(CreateListDestroyViewSet):
     #TODO: пагинация
-    # TODO: права доступа
-    # permission_classes = (IsAdminOrReadOnly,)
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (IsAdminOrReadOnly,)
+    # permission_classes = (permissions.AllowAny,)
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    #TODO: пагинация
+    # permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    permission_classes = (permissions.AllowAny,)
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')

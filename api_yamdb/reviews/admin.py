@@ -14,11 +14,12 @@ class GenreAdmin(admin.ModelAdmin):
     search_fields = ('name', 'slug')
     empty_value_display = '-=пусто=-'
 
+
 class TitleAdmin(admin.ModelAdmin):
-    #TODO: как отобразить поле Жанр (manyToMany)?
     list_display = ('pk', 'name', 'year', 'description', 'category')
     search_fields = ('name', 'year')
     empty_value_display = '-=пусто=-'
+
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)

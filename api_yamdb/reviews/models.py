@@ -46,12 +46,22 @@ class User(AbstractUser):
 
 class Category(models.Model):
     name = models.CharField(max_length=256, null=False, blank=False)
-    slug = models.SlugField(max_length=50, null=False, blank=False) #TODO: unique=True,
+    slug = models.SlugField(
+        max_length=50,
+        null=False,
+        blank=False,
+        unique=True,
+    )
 
 
 class Genre(models.Model):
     name = models.CharField(max_length=256, null=False, blank=False)
-    slug = models.SlugField(max_length=50, null=False, blank=False) #TODO: unique=True,
+    slug = models.SlugField(
+        max_length=50,
+        null=False,
+        blank=False,
+        unique=True
+    )
 
 
 class Title(models.Model):
@@ -59,7 +69,11 @@ class Title(models.Model):
     year = models.IntegerField()
     description = models.TextField(null=False, blank=True)
     genre = models.ManyToManyField(Genre, through='GenreTitle')
-    category = models.ForeignKey(Category, related_name='titles', on_delete=models.DO_NOTHING)
+    category = models.ForeignKey(
+        Category,
+        related_name='titles',
+        on_delete=models.DO_NOTHING
+    )
 
 
 class GenreTitle(models.Model):

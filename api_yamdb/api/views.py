@@ -2,14 +2,21 @@ from random import randint
 
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, status, viewsets
+from rest_framework import status, mixins, viewsets, permissions, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django_filters.rest_framework import DjangoFilterBackend
 
-from reviews.models import User
+from reviews.models import User, Category, Genre, Title
 from .permissions import IsAdminOrReadOnly
-from .serializers import UserSerializer
+from .serializers import (
+    UserSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+    UserSerializer
+)
 
 
 class SendConfirmationCodeView(APIView):
@@ -51,6 +58,47 @@ class GetTokenView(APIView):
             return Response({
                 'access': str(refresh.access_token),
             })
+
+
+class CreateListDestroyViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    pass
+
+
+class CategoryViewSet(CreateListDestroyViewSet):
+    #TODO: пагинация
+    permission_classes = (IsAdminOrReadOnly,)
+    # permission_classes = (permissions.AllowAny,)
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class GenreViewSet(CreateListDestroyViewSet):
+    #TODO: пагинация
+    permission_classes = (IsAdminOrReadOnly,)
+    # permission_classes = (permissions.AllowAny,)
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    #TODO: пагинация
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    # permission_classes = (permissions.AllowAny,)
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
 
 
 class MeViewSet(viewsets.ViewSet):

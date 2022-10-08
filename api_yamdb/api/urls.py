@@ -1,13 +1,20 @@
 from django.urls import include, path
-from rest_framework import routers
+from rest_framework.routers import SimpleRouter
 
-from api.views import (
+from .views import (
+    CategoryViewSet,
+    GenreViewSet,
     GetTokenView,
     MeViewSet,
     SendConfirmationCodeView,
-    UserViewSet)
+    TitleViewSet,
+    UserViewSet,
+)
 
 router = SimpleRouter()
+router.register('categories', CategoryViewSet)
+router.register('genres', GenreViewSet)
+router.register('titles', TitleViewSet)
 router.register(
     r'titles/(?P<title_id>\d+)/reviews',
     ReviewViewSet,
@@ -18,9 +25,8 @@ router.register(
     CommentViewSet,
     basename='comments'
 )
-
-router = routers.DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
+
 
 urlpatterns = [
     path('users/me/', MeViewSet.as_view({'get': 'retrieve',
@@ -33,4 +39,5 @@ urlpatterns = [
         GetTokenView.as_view(),
         name='token_obtain'
     ),
+    path('', include(router.urls))
 ]

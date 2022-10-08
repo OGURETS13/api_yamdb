@@ -23,13 +23,15 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return (request.user.is_anonymous is False
-                and request.user.role == 'admin')
+
+        if not request.user.is_anonymous:
+            role = request.user.role
+            return role == 'admin'
 
 
 class AdminModeratorAuthorPermission(permissions.BasePermission):
     """
-    Редактировать объект моут только админ, модератор и автор
+    Редактировать объект могут только админ, модератор и автор
     Безопасные методы доступны всем пользователям.
     """
     def has_permission(self, request, view):

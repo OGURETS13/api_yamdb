@@ -23,7 +23,7 @@ from .serializers import (
 class SendConfirmationCodeView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
-        username = request.data['username']
+        username = request.data.get('username')
 
         if User.objects.filter(username=username).exists():
             instance = User.objects.get(username=username)
@@ -42,16 +42,16 @@ class SendConfirmationCodeView(APIView):
                 [email],
                 fail_silently=False,
             )
-
             serializer.save(confirmation_code=confirmation_code)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetTokenView(APIView):
     def post(self, request):
-        username = request.data['username']
-        confirmation_code = request.data['confirmation_code']
+        username = request.data.get('username')
+        confirmation_code = request.data.get('confirmation_code')
         user = get_object_or_404(User, username=username)
 
         if confirmation_code == user.confirmation_code:

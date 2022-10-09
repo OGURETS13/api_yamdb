@@ -33,7 +33,6 @@ urlpatterns = [
                                          'patch': 'partial_update'})),
     path('', include(router.urls)),
     path('auth/signup/', SendConfirmationCodeView.as_view()),
-    path('', include(router.urls)),
     path(
         'auth/token/',
         GetTokenView.as_view(),

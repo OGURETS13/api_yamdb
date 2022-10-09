@@ -43,6 +43,14 @@ class User(AbstractUser):
         blank=True
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['username'],
+                name='unique_username'
+            )
+        ]
+
 
 class Category(models.Model):
     name = models.CharField(max_length=256, null=False, blank=False)

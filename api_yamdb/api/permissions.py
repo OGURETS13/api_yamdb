@@ -29,12 +29,26 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             return role == 'admin'
 
 
+class IsAdmin(permissions.BasePermission):
+    """
+    Все права эндпоинта только у администратора.
+    """
+    def has_permission(self, request, view):
+        if not request.user.is_anonymous:
+            if request.user.is_superuser:
+                return True
+            role = request.user.role
+            return role == 'admin'
+
+
 class AdminModeratorAuthorPermission(permissions.BasePermission):
     """
     Редактировать объект могут только админ, модератор и автор
     Безопасные методы доступны всем пользователям.
     """
     def has_permission(self, request, view):
+        if request.user.is_superuser:
+            return True
         return (
             request.method in permissions.SAFE_METHODS
             or request.user.is_authenticated

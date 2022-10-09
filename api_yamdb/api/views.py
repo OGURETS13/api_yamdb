@@ -1,12 +1,14 @@
 from random import randint
 
+import django_filters
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import status, mixins, viewsets, filters, permissions
+from rest_framework import status, mixins, viewsets, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import filters as django_filters_filters
 
 from reviews.models import User, Category, Genre, Title
 from .permissions import IsAdmin, IsAdminOrReadOnly
@@ -82,7 +84,6 @@ class CreateListDestroyViewSet(
 
 class CategoryViewSet(CreateListDestroyViewSet):
     permission_classes = (IsAdminOrReadOnly,)
-    # permission_classes = (permissions.AllowAny,)
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     lookup_field = 'slug'
@@ -92,7 +93,6 @@ class CategoryViewSet(CreateListDestroyViewSet):
 
 class GenreViewSet(CreateListDestroyViewSet):
     permission_classes = (IsAdminOrReadOnly,)
-    # permission_classes = (permissions.AllowAny,)
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     lookup_field = 'slug'
@@ -100,34 +100,29 @@ class GenreViewSet(CreateListDestroyViewSet):
     search_fields = ('name',)
 
 
+class TitleFilter(django_filters.FilterSet):
+    genre = django_filters_filters.CharFilter(field_name='genre__slug')
+    category = django_filters_filters.CharFilter(field_name='category__slug')
+    name = django_filters_filters.CharFilter(
+        field_name='name',
+        lookup_expr='icontains'
+    )
+
+    class Meta:
+        model = Title
+        fields = ['year', ]
+
+
 class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
-    # TODO: почему не работает DjangoFilterBackend?
-    # filter_backends = (DjangoFilterBackend,)
-    # permission_classes = (permissions.AllowAny,)
+    filter_backends = (DjangoFilterBackend,)
     queryset = Title.objects.all()
-    # filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve', 'destroy'):
             return TitleReadDelSerializer
         return TitleCreateUpdateSerializer
-
-    def get_queryset(self):
-        queryset = super(TitleViewSet, self).get_queryset()
-        genre_slug = self.request.query_params.get('genre', None)
-        category_slug = self.request.query_params.get('category', None)
-        year = self.request.query_params.get('year', None)
-        name = self.request.query_params.get('name', None)
-        if genre_slug:
-            queryset = queryset.filter(genre__slug=genre_slug)
-        if category_slug:
-            queryset = queryset.filter(category__slug=category_slug)
-        if year:
-            queryset = queryset.filter(year=year)
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        return queryset
 
 
 class MeViewSet(viewsets.ViewSet):

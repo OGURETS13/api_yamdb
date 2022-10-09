@@ -9,9 +9,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
 
 from reviews.models import User, Category, Genre, Title
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdmin, IsAdminOrReadOnly
 from .serializers import (
     UserSerializer,
+    AuthSerializer,
     CategorySerializer,
     GenreSerializer,
     TitleReadDelSerializer,
@@ -22,7 +23,7 @@ from .serializers import (
 
 class SendConfirmationCodeView(APIView):
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = AuthSerializer(data=request.data)
         username = request.data.get('username')
 
         if User.objects.filter(username=username).exists():
@@ -31,10 +32,11 @@ class SendConfirmationCodeView(APIView):
                 instance=instance,
                 data=request.data
             )
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         if serializer.is_valid():
             confirmation_code = str(randint(100000, 999999))
-            email = request.data['email']
+            email = request.data.get('email')
             send_mail(
                 'YAMDB Confirmation code',
                 str(request.data['username'] + '\n' + str(confirmation_code)),
@@ -52,13 +54,21 @@ class GetTokenView(APIView):
     def post(self, request):
         username = request.data.get('username')
         confirmation_code = request.data.get('confirmation_code')
-        user = get_object_or_404(User, username=username)
 
-        if confirmation_code == user.confirmation_code:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'access': str(refresh.access_token),
-            })
+        if username is None:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = get_object_or_404(User, username=username)
+            print(user.username)
+            if confirmation_code == user.confirmation_code:
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    'access': str(refresh.access_token),
+                })
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 class CreateListDestroyViewSet(
@@ -121,6 +131,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class MeViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+
     def retrieve(self, request, pk=None):
         queryset = User.objects.all()
         me = get_object_or_404(queryset, pk=request.user.pk)
@@ -132,13 +144,19 @@ class MeViewSet(viewsets.ViewSet):
         me = get_object_or_404(queryset, pk=request.user.pk)
         serializer = UserSerializer(me, data=request.data, partial=True)
         if serializer.is_valid():
+            if 'role' in request.data:
+                if me.role == 'admin' or me.is_superuser:
+                    serializer.validated_data['role'] \
+                        = request.data.get('role')
+                else:
+                    serializer.validated_data['role'] = me.role
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAdmin,)
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'

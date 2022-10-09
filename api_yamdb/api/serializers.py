@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
+from rest_framework.validators import UniqueValidator
 
 from reviews.models import (
     Category,
@@ -9,16 +10,13 @@ from reviews.models import (
     GenreTitle,
     # Review,
     Title,
-    User)
+    User
+)
 
 
-class UserSerializer(serializers.ModelSerializer):
+class AuthSerializer(serializers.ModelSerializer):
     confirmation_code = serializers.HiddenField(
         default=''
-    )
-    serializers.ChoiceField(
-        read_only=True,
-        choices=['user', 'moderator', 'admin'],
     )
     password = serializers.HiddenField(
         default='',
@@ -37,6 +35,41 @@ class UserSerializer(serializers.ModelSerializer):
             'confirmation_code',
             'role',
             'email',
+        )
+        lookup_field = 'username'
+
+    def validate_username(self, value):
+        if value == 'me':
+            raise serializers.ValidationError("Username 'me' - под запретом!")
+        return value
+
+
+class UserSerializer(serializers.ModelSerializer):
+    confirmation_code = serializers.HiddenField(
+        default=''
+    )
+    password = serializers.HiddenField(
+        default='',
+        required=False,
+        allow_null=True
+    )
+    role = serializers.ChoiceField(
+        choices=['user', 'moderator', 'admin'],
+        default='user',
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'password',
+            'confirmation_code',
+            'role',
+            'email',
+            'bio',
+            'first_name',
+            'last_name',
+
         )
         lookup_field = 'username'
 

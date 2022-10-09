@@ -3,7 +3,7 @@ from random import randint
 import django_filters
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import status, mixins, viewsets, filters
+from rest_framework import status, mixins, viewsets, filters, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -13,13 +13,12 @@ from django_filters.rest_framework import filters as django_filters_filters
 from reviews.models import User, Category, Genre, Title
 from .permissions import IsAdmin, IsAdminOrReadOnly
 from .serializers import (
-    UserSerializer,
     AuthSerializer,
     CategorySerializer,
     GenreSerializer,
     TitleReadDelSerializer,
     TitleCreateUpdateSerializer,
-    UserSerializer
+    UserSerializer,
 )
 
 

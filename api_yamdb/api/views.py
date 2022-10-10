@@ -2,6 +2,7 @@ from random import randint
 
 import django_filters
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import status, mixins, viewsets, filters, permissions
 from rest_framework.response import Response
@@ -121,7 +122,9 @@ class TitleFilter(django_filters.FilterSet):
 class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    ).all()
     filterset_class = TitleFilter
 
     def get_serializer_class(self):

@@ -103,6 +103,7 @@ class TitleReadDelSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(many=False, read_only=True)
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -110,7 +111,7 @@ class TitleReadDelSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'year',
-            # 'rating',
+            'rating',
             # TODO: сделать вычисляемое поле когда появится модель с оценками
             'description',
             'genre',

@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from rest_framework.validators import UniqueValidator
 
 from reviews.models import (
     Category,
@@ -190,11 +189,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-    def validate_score(self, value):
-        if 0 > value > 10:
-            raise serializers.ValidationError('Оценка по 10-бальной шкале!')
-        return value
-
     def validate(self, data):
         request = self.context['request']
         author = request.user
@@ -202,7 +196,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         title = get_object_or_404(Title, pk=title_id)
         if (
             request.method == 'POST'
-            and Review.objects.filter(title=title, author=author).exists()
+            and title.reviews.filter(author=author).exists()
         ):
             raise ValidationError('Может существовать только один отзыв!')
         return data

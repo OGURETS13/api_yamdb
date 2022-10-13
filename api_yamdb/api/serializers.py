@@ -139,7 +139,6 @@ class TitleReadDelSerializer(serializers.ModelSerializer):
             'name',
             'year',
             'rating',
-            # TODO: сделать вычисляемое поле когда появится модель с оценками
             'description',
             'genre',
             'category'
@@ -176,24 +175,19 @@ class TitleCreateUpdateSerializer(serializers.ModelSerializer):
             **validated_data,
             category=category
         )
+        genre_titles = []
         for genre in genres:
-            GenreTitle.objects.create(
-                genre=genre,
-                title=title
+            genre_titles.append(
+                GenreTitle(
+                    genre=genre,
+                    title=title
+                )
             )
+        GenreTitle.objects.bulk_create(genre_titles)
         return title
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.year = validated_data.get('year', instance.year)
-        instance.description = validated_data.get(
-            'description',
-            instance.description
-        )
-        instance.category = validated_data.get(
-            'category',
-            instance.category
-        )
+        super().update(instance, validated_data)
         genres = validated_data.get('genre', [])
         for genre in genres:
             GenreTitle.objects.get_or_create(

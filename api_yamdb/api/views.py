@@ -1,6 +1,5 @@
 from random import randint
 
-import django_filters
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -9,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
-from django_filters.rest_framework import filters as django_filters_filters
 
 from reviews.models import User, Category, Genre, Review, Title
 from .permissions import (
@@ -28,6 +26,7 @@ from .serializers import (
     TokenSerializer,
     UserSerializer,
 )
+from .filters import TitleFilter
 
 
 class SendConfirmationCodeView(APIView):
@@ -91,19 +90,6 @@ class GenreViewSet(CreateListDestroyViewSet):
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
-
-
-class TitleFilter(django_filters.FilterSet):
-    genre = django_filters_filters.CharFilter(field_name='genre__slug')
-    category = django_filters_filters.CharFilter(field_name='category__slug')
-    name = django_filters_filters.CharFilter(
-        field_name='name',
-        lookup_expr='icontains'
-    )
-
-    class Meta:
-        model = Title
-        fields = ['year', ]
 
 
 class TitleViewSet(viewsets.ModelViewSet):

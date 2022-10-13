@@ -4,10 +4,13 @@ from django.db import models
 
 
 class User(AbstractUser):
+    user = 'user'
+    moderator = 'moderator'
+    admin = 'admin'
     ROLE_CHOICES = [
-        ('user', 'User'),
-        ('moderator', 'Moderator'),
-        ('admin', 'Admin'),
+        (user, 'User'),
+        (moderator, 'Moderator'),
+        (admin, 'Admin'),
     ]
     role = models.CharField(
         'Роль пользователя',

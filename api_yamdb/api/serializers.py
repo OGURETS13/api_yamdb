@@ -40,13 +40,42 @@ class AuthSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         if value == 'me':
             raise serializers.ValidationError("Username 'me' - под запретом!")
+        if value is None:
+            raise serializers.ValidationError("Username - обязательное поле")
         return value
+
+    def validate(self, data):
+        username = data['username']
+        if User.objects.filter(username=username).exists():
+            raise ValidationError('Это имя пользователя уже занято')
+        return data
+
+
+class TokenSerializer(serializers.ModelSerializer):
+    username = serializers.SlugField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'confirmation_code',
+        )
+
+    def validate(self, data):
+        username = data['username']
+        confirmation_code = data['confirmation_code']
+        user = get_object_or_404(User, username=username)
+        print(confirmation_code)
+        print(user.confirmation_code)
+        if confirmation_code != user.confirmation_code:
+            raise serializers.ValidationError(
+                'Неверный код подтверждения!'
+            )
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
-    confirmation_code = serializers.HiddenField(
-        default=''
-    )
     password = serializers.HiddenField(
         default='',
         required=False,
@@ -62,7 +91,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'username',
             'password',
-            'confirmation_code',
             'role',
             'email',
             'bio',
@@ -111,7 +139,6 @@ class TitleReadDelSerializer(serializers.ModelSerializer):
             'name',
             'year',
             'rating',
-            # TODO: сделать вычисляемое поле когда появится модель с оценками
             'description',
             'genre',
             'category'
@@ -148,24 +175,19 @@ class TitleCreateUpdateSerializer(serializers.ModelSerializer):
             **validated_data,
             category=category
         )
+        genre_titles = []
         for genre in genres:
-            GenreTitle.objects.create(
-                genre=genre,
-                title=title
+            genre_titles.append(
+                GenreTitle(
+                    genre=genre,
+                    title=title
+                )
             )
+        GenreTitle.objects.bulk_create(genre_titles)
         return title
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.year = validated_data.get('year', instance.year)
-        instance.description = validated_data.get(
-            'description',
-            instance.description
-        )
-        instance.category = validated_data.get(
-            'category',
-            instance.category
-        )
+        super().update(instance, validated_data)
         genres = validated_data.get('genre', [])
         for genre in genres:
             GenreTitle.objects.get_or_create(
@@ -189,11 +211,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-    def validate_score(self, value):
-        if 0 > value > 10:
-            raise serializers.ValidationError('Оценка по 10-бальной шкале!')
-        return value
-
     def validate(self, data):
         request = self.context['request']
         author = request.user
@@ -201,7 +218,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         title = get_object_or_404(Title, pk=title_id)
         if (
             request.method == 'POST'
-            and Review.objects.filter(title=title, author=author).exists()
+            and title.reviews.filter(author=author).exists()
         ):
             raise ValidationError('Может существовать только один отзыв!')
         return data

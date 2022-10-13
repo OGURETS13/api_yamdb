@@ -1,6 +1,5 @@
 from random import randint
 
-import django_filters
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -9,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
-from django_filters.rest_framework import filters as django_filters_filters
 
 from reviews.models import User, Category, Genre, Review, Title
 from .permissions import (
@@ -25,29 +23,24 @@ from .serializers import (
     ReviewSerializer,
     TitleReadDelSerializer,
     TitleCreateUpdateSerializer,
+    TokenSerializer,
     UserSerializer,
 )
+from .filters import TitleFilter
 
 
 class SendConfirmationCodeView(APIView):
     def post(self, request):
         serializer = AuthSerializer(data=request.data)
-        username = request.data.get('username')
-
-        if User.objects.filter(username=username).exists():
-            instance = User.objects.get(username=username)
-            serializer = UserSerializer(
-                instance=instance,
-                data=request.data
-            )
-            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         if serializer.is_valid():
             confirmation_code = str(randint(100000, 999999))
-            email = request.data.get('email')
+            email = serializer.initial_data.get('email')
             send_mail(
                 'YAMDB Confirmation code',
-                str(request.data['username'] + '\n' + str(confirmation_code)),
+                (str(serializer.initial_data['username']
+                 + '\n'
+                 + str(confirmation_code))),
                 'from@example.com',
                 [email],
                 fail_silently=False,
@@ -60,23 +53,16 @@ class SendConfirmationCodeView(APIView):
 
 class GetTokenView(APIView):
     def post(self, request):
-        username = request.data.get('username')
-        confirmation_code = request.data.get('confirmation_code')
+        serializer = TokenSerializer(data=request.data)
 
-        if username is None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        try:
+        if serializer.is_valid():
+            username = serializer.data.get('username')
             user = get_object_or_404(User, username=username)
-            print(user.username)
-            if confirmation_code == user.confirmation_code:
-                refresh = RefreshToken.for_user(user)
-                return Response({
-                    'access': str(refresh.access_token),
-                })
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access': str(refresh.access_token),
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CreateListDestroyViewSet(
@@ -104,19 +90,6 @@ class GenreViewSet(CreateListDestroyViewSet):
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
-
-
-class TitleFilter(django_filters.FilterSet):
-    genre = django_filters_filters.CharFilter(field_name='genre__slug')
-    category = django_filters_filters.CharFilter(field_name='category__slug')
-    name = django_filters_filters.CharFilter(
-        field_name='name',
-        lookup_expr='icontains'
-    )
-
-    class Meta:
-        model = Title
-        fields = ['year', ]
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -165,11 +138,6 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-
-    def perform_create(self, serializer):
-        if 'role' in self.request.data:
-            serializer.save(role=self.request.data['role'])
-        serializer.save()
 
 
 class CommentViewSet(viewsets.ModelViewSet):

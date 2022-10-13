@@ -40,13 +40,42 @@ class AuthSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         if value == 'me':
             raise serializers.ValidationError("Username 'me' - под запретом!")
+        if value is None:
+            raise serializers.ValidationError("Username - обязательное поле")
         return value
+
+    def validate(self, data):
+        username = data['username']
+        if User.objects.filter(username=username).exists():
+            raise ValidationError('Это имя пользователя уже занято')
+        return data
+
+
+class TokenSerializer(serializers.ModelSerializer):
+    username = serializers.SlugField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'confirmation_code',
+        )
+
+    def validate(self, data):
+        username = data['username']
+        confirmation_code = data['confirmation_code']
+        user = get_object_or_404(User, username=username)
+        print(confirmation_code)
+        print(user.confirmation_code)
+        if confirmation_code != user.confirmation_code:
+            raise serializers.ValidationError(
+                'Неверный код подтверждения!'
+            )
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
-    confirmation_code = serializers.HiddenField(
-        default=''
-    )
     password = serializers.HiddenField(
         default='',
         required=False,
@@ -62,7 +91,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'username',
             'password',
-            'confirmation_code',
             'role',
             'email',
             'bio',

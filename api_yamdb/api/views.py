@@ -25,6 +25,7 @@ from .serializers import (
     ReviewSerializer,
     TitleReadDelSerializer,
     TitleCreateUpdateSerializer,
+    TokenSerializer,
     UserSerializer,
 )
 
@@ -32,22 +33,15 @@ from .serializers import (
 class SendConfirmationCodeView(APIView):
     def post(self, request):
         serializer = AuthSerializer(data=request.data)
-        username = request.data.get('username')
-
-        if User.objects.filter(username=username).exists():
-            instance = User.objects.get(username=username)
-            serializer = UserSerializer(
-                instance=instance,
-                data=request.data
-            )
-            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         if serializer.is_valid():
             confirmation_code = str(randint(100000, 999999))
-            email = request.data.get('email')
+            email = serializer.initial_data.get('email')
             send_mail(
                 'YAMDB Confirmation code',
-                str(request.data['username'] + '\n' + str(confirmation_code)),
+                (str(serializer.initial_data['username']
+                 + '\n'
+                 + str(confirmation_code))),
                 'from@example.com',
                 [email],
                 fail_silently=False,
@@ -60,23 +54,16 @@ class SendConfirmationCodeView(APIView):
 
 class GetTokenView(APIView):
     def post(self, request):
-        username = request.data.get('username')
-        confirmation_code = request.data.get('confirmation_code')
+        serializer = TokenSerializer(data=request.data)
 
-        if username is None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        try:
+        if serializer.is_valid():
+            username = serializer.data.get('username')
             user = get_object_or_404(User, username=username)
-            print(user.username)
-            if confirmation_code == user.confirmation_code:
-                refresh = RefreshToken.for_user(user)
-                return Response({
-                    'access': str(refresh.access_token),
-                })
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access': str(refresh.access_token),
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CreateListDestroyViewSet(
@@ -165,11 +152,6 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-
-    def perform_create(self, serializer):
-        if 'role' in self.request.data:
-            serializer.save(role=self.request.data['role'])
-        serializer.save()
 
 
 class CommentViewSet(viewsets.ModelViewSet):
